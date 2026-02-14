@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>リズムゲーム 黄色線基準</title>
+<title>オニたいじゲーム</title>
 
 <style>
 body{
@@ -23,14 +23,13 @@ body{
 
 .note{
     position:absolute;
-    width:30%;
+    width:60px;
     height:60px;
-    border-radius:50%;
 }
 
 #judge{
     position:absolute;
-    bottom:80px;       /* 黄色線を下に */
+    bottom:80px;
     width:100%;
     height:160px;
     border-top:3px solid yellow;
@@ -79,24 +78,7 @@ const judgeY = window.innerHeight - 80;
 const judgeRange = 160;
 
 //--------------------------------
-// タップ音（色別）
-function playBeep(color){
-    const ctx = new AudioContext();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = "square";
-
-    if(color==="blue") o.frequency.value=300;
-    else if(color==="green") o.frequency.value=500;
-    else o.frequency.value=700;
-
-    o.start();
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.15);
-}
-
-//--------------------------------
-// ノーツ生成
+// ノーツ生成（画像対応）
 //--------------------------------
 setInterval(()=>{
     if(!playing) return;
@@ -104,19 +86,29 @@ setInterval(()=>{
     const note = document.createElement("div");
     note.className="note";
 
+    // 列ランダム 0,1,2
     const lane = Math.floor(Math.random()*3);
     note.lane = lane;
     note.style.left = (lane*33.33)+"%";
     note.y = -60;
 
+    // ノーツの種類・画像
     const r = Math.random();
-    if(r<0.33) note.color="blue";
-    else if(r<0.66) note.color="green";
-    else note.color="red";
-    note.style.background=note.color;
+    if(r<0.33){
+        note.color="blue";
+        note.style.backgroundImage = "url('oni_blue.png')";
+    } else if(r<0.66){
+        note.color="green";
+        note.style.backgroundImage = "url('oni_green.png')";
+    } else {
+        note.color="red";
+        note.style.backgroundImage = "url('bomb.png')";
+    }
+    note.style.backgroundSize = "contain";
+    note.style.backgroundRepeat = "no-repeat";
+    note.style.backgroundPosition = "center";
 
     note.style.top = note.y+"px";
-
     game.appendChild(note);
     notes.push(note);
 
@@ -143,7 +135,7 @@ function update(){
 update();
 
 //--------------------------------
-// タップ判定（黄色線より上のみ、赤マイナス100点）
+// タップ判定（黄色線より上のみ、赤は-100点）
 //--------------------------------
 game.addEventListener("touchstart", e=>{
     if(!playing) return;
@@ -154,7 +146,6 @@ game.addEventListener("touchstart", e=>{
         const laneStart = n.lane*window.innerWidth/3;
         const laneEnd = (n.lane+1)*window.innerWidth/3;
 
-        // 黄色線より上のノーツのみ判定
         if(n.y <= judgeY && x >= laneStart && x <= laneEnd && Math.abs(n.y - judgeY) <= judgeRange){
             
             if(n.color==="red"){
@@ -164,7 +155,6 @@ game.addEventListener("touchstart", e=>{
             }
             scoreEl.textContent = score;
 
-            playBeep(n.color);
             n.remove();
             notes.splice(i,1);
         }
@@ -186,8 +176,7 @@ const timer = setInterval(()=>{
 },1000);
 
 //--------------------------------
-// ランキング保存
-//--------------------------------
+// ランキング保存（ローカルのみ）
 function endGame(){
     playing=false;
     clearInterval(timer);
@@ -212,5 +201,6 @@ function showRanking(ranks){
 
 showRanking(JSON.parse(localStorage.getItem("ranks")||"[]"));
 </script>
+
 </body>
 </html>
