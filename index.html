@@ -1,88 +1,182 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>リズムゲーム</title>
+
 <style>
-body{margin:0;background:black;overflow:hidden}
-#line{
-position:absolute;
-bottom:120px;
-height:5px;
-width:100%;
-background:yellow;
+body{
+    margin:0;
+    background:black;
+    overflow:hidden;
+    touch-action:manipulation;
+    font-family:sans-serif;
+    color:white;
 }
+
+#game{
+    position:relative;
+    width:100vw;
+    height:100vh;
+}
+
 .note{
-position:absolute;
-width:80%;
-height:20px;
-left:10%;
-background:cyan;
+    position:absolute;
+    width:60px;
+    height:60px;
+    background:red;
+    border-radius:50%;
+}
+
+#judge{
+    position:absolute;
+    bottom:140px;
+    width:100%;
+    height:120px;   /* ← 判定広め */
+    border-top:3px solid yellow;
+}
+
+#ui{
+    position:absolute;
+    top:10px;
+    left:10px;
+}
+
+#ranking{
+    position:absolute;
+    right:10px;
+    top:10px;
+    font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="line"></div>
+<div id="game">
+    <div id="ui">
+        スコア: <span id="score">0</span><br>
+        残り時間: <span id="time">60</span>
+    </div>
+
+    <div id="ranking"></div>
+
+    <div id="judge"></div>
+</div>
 
 <script>
 
-const URL="https://script.google.com/macros/s/AKfycbyxYEOHVtVb1axr6og0LcFPkINM2wC4t8d_aPpwnm0QQZ-Bt4UHxnIAyQMxarSdTqVM/exec"
+const game = document.getElementById("game");
+const scoreEl = document.getElementById("score");
+const timeEl = document.getElementById("time");
+const rankingEl = document.getElementById("ranking");
 
-let score=0
-let notes=[]
+let score = 0;
+let notes = [];
+let timeLeft = 60;
+let playing = true;
 
-function spawn(){
-let n=document.createElement("div")
-n.className="note"
-n.style.top="0px"
-document.body.appendChild(n)
-notes.push(n)
-}
+const judgeY = window.innerHeight - 200;
+const judgeRange = 120; // 判定範囲広さ
 
-setInterval(spawn,900)
-
+//--------------------------------
+// ノーツ生成
+//--------------------------------
 setInterval(()=>{
+    if(!playing) return;
 
-notes.forEach((n,i)=>{
-let y=parseInt(n.style.top)
-y+=8
-n.style.top=y+"px"
+    const note = document.createElement("div");
+    note.className="note";
+    note.x = Math.random()*(window.innerWidth-60);
+    note.y = -60;
 
-if(y>window.innerHeight){
-n.remove()
-notes.splice(i,1)
+    note.style.left = note.x+"px";
+    note.style.top = note.y+"px";
+
+    game.appendChild(note);
+    notes.push(note);
+
+},600);
+
+//--------------------------------
+// ノーツ落下
+//--------------------------------
+function update(){
+    if(!playing) return;
+
+    notes.forEach((n,i)=>{
+        n.y += 4;
+        n.style.top = n.y+"px";
+
+        if(n.y > window.innerHeight){
+            n.remove();
+            notes.splice(i,1);
+        }
+    });
+
+    requestAnimationFrame(update);
 }
-})
+update();
 
-},16)
+//--------------------------------
+// タップ判定
+//--------------------------------
+game.addEventListener("touchstart", e=>{
+    if(!playing) return;
 
-document.body.addEventListener("touchstart",e=>{
+    const y = e.touches[0].clientY;
 
-notes.forEach((n,i)=>{
-let y=n.getBoundingClientRect().top
+    notes.forEach((n,i)=>{
+        if(Math.abs(n.y - judgeY) < judgeRange){
+            score += 100;
+            scoreEl.textContent = score;
+            n.remove();
+            notes.splice(i,1);
+        }
+    });
+});
 
-if(Math.abs(y-(window.innerHeight-120))<120){
-score+=10
-n.remove()
-notes.splice(i,1)
+//--------------------------------
+// タイマー
+//--------------------------------
+const timer = setInterval(()=>{
+    if(!playing) return;
+
+    timeLeft--;
+    timeEl.textContent = timeLeft;
+
+    if(timeLeft <= 0){
+        endGame();
+    }
+},1000);
+
+//--------------------------------
+// ランキング保存
+//--------------------------------
+function endGame(){
+    playing=false;
+    clearInterval(timer);
+
+    let ranks = JSON.parse(localStorage.getItem("ranks")||"[]");
+    ranks.push(score);
+    ranks.sort((a,b)=>b-a);
+    ranks = ranks.slice(0,5);
+
+    localStorage.setItem("ranks", JSON.stringify(ranks));
+    showRanking(ranks);
+
+    alert("終了！スコア："+score);
 }
-})
 
-})
+function showRanking(ranks){
+    rankingEl.innerHTML="<b>ランキング</b><br>";
+    ranks.forEach((r,i)=>{
+        rankingEl.innerHTML += `${i+1}位 : ${r}<br>`;
+    });
+}
 
-setTimeout(()=>{
-let name=prompt("名前")
-fetch(URL,{
-method:"POST",
-body:JSON.stringify({
-Name:name,
-Score:score,
-Game:"リズム",
-Date:new Date().toLocaleString()
-})
-})
-},30000)
+showRanking(JSON.parse(localStorage.getItem("ranks")||"[]"));
 
 </script>
 </body>
