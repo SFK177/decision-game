@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>リズムゲーム 色別音付き</title>
+<title>リズムゲーム 列判定</title>
 
 <style>
 body{
@@ -23,7 +23,7 @@ body{
 
 .note{
     position:absolute;
-    width:60px;
+    width:30%;
     height:60px;
     border-radius:50%;
 }
@@ -88,9 +88,9 @@ function playBeep(color){
     o.connect(g); g.connect(ctx.destination);
     o.type = "square";
 
-    if(color==="blue") o.frequency.value=300;   // 低め
-    else if(color==="green") o.frequency.value=500; // 中
-    else o.frequency.value=700; // 赤は高め
+    if(color==="blue") o.frequency.value=300;
+    else if(color==="green") o.frequency.value=500;
+    else o.frequency.value=700;
 
     o.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.15);
@@ -104,17 +104,20 @@ setInterval(()=>{
 
     const note = document.createElement("div");
     note.className="note";
-    note.x = Math.random()*(window.innerWidth-60);
+
+    // 列ランダム 0,1,2
+    const lane = Math.floor(Math.random()*3);
+    note.lane = lane;
+    note.style.left = (lane*33.33)+"%";
     note.y = -60;
 
-    // 色をランダムで決定
+    // 色ランダム
     const r = Math.random();
     if(r<0.33) note.color="blue";
     else if(r<0.66) note.color="green";
     else note.color="red";
     note.style.background=note.color;
 
-    note.style.left = note.x+"px";
     note.style.top = note.y+"px";
 
     game.appendChild(note);
@@ -143,19 +146,24 @@ function update(){
 update();
 
 //--------------------------------
-// タップ判定
+// タップ判定（列ごと）
 //--------------------------------
 game.addEventListener("touchstart", e=>{
     if(!playing) return;
 
+    const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
 
     notes.forEach((n,i)=>{
-        if(Math.abs(n.y - judgeY) <= judgeRange){
+        // 判定範囲と列一致で成功
+        const laneStart = n.lane*window.innerWidth/3;
+        const laneEnd = (n.lane+1)*window.innerWidth/3;
+
+        if(x >= laneStart && x <= laneEnd && Math.abs(n.y - judgeY) <= judgeRange){
             score += 100;
             scoreEl.textContent = score;
 
-            playBeep(n.color); // ← ノーツの色で音を変える
+            playBeep(n.color);
 
             n.remove();
             notes.splice(i,1);
