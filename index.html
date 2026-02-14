@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>リズムゲーム 列判定</title>
+<title>リズムゲーム 赤マイナス対応</title>
 
 <style>
 body{
@@ -65,7 +65,6 @@ body{
 </div>
 
 <script>
-
 const game = document.getElementById("game");
 const scoreEl = document.getElementById("score");
 const timeEl = document.getElementById("time");
@@ -146,7 +145,7 @@ function update(){
 update();
 
 //--------------------------------
-// タップ判定（列ごと）
+// タップ判定（列ごと、赤マイナス対応）
 //--------------------------------
 game.addEventListener("touchstart", e=>{
     if(!playing) return;
@@ -155,16 +154,19 @@ game.addEventListener("touchstart", e=>{
     const y = e.touches[0].clientY;
 
     notes.forEach((n,i)=>{
-        // 判定範囲と列一致で成功
         const laneStart = n.lane*window.innerWidth/3;
         const laneEnd = (n.lane+1)*window.innerWidth/3;
 
         if(x >= laneStart && x <= laneEnd && Math.abs(n.y - judgeY) <= judgeRange){
-            score += 100;
+            
+            if(n.color==="red"){
+                score -= 3; // 赤はマイナス3点
+            } else {
+                score += 100; // 青・緑はプラス
+            }
             scoreEl.textContent = score;
 
             playBeep(n.color);
-
             n.remove();
             notes.splice(i,1);
         }
@@ -211,7 +213,6 @@ function showRanking(ranks){
 }
 
 showRanking(JSON.parse(localStorage.getItem("ranks")||"[]"));
-
 </script>
 </body>
 </html>
