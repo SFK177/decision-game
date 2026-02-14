@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>リズムゲーム 赤マイナス対応</title>
+<title>リズムゲーム 赤マイナス100点</title>
 
 <style>
 body{
@@ -30,7 +30,7 @@ body{
 
 #judge{
     position:absolute;
-    bottom:140px;
+    bottom:80px;       /* 黄色線を下に下げる */
     width:100%;
     height:160px;
     border-top:3px solid yellow;
@@ -75,7 +75,8 @@ let notes = [];
 let timeLeft = 60;
 let playing = true;
 
-const judgeY = window.innerHeight - 200;
+// 黄色線位置を下に
+const judgeY = window.innerHeight - 80;
 const judgeRange = 160;
 
 //--------------------------------
@@ -145,7 +146,7 @@ function update(){
 update();
 
 //--------------------------------
-// タップ判定（列ごと、赤マイナス対応）
+// タップ判定（列ごと、赤はマイナス100点）
 //--------------------------------
 game.addEventListener("touchstart", e=>{
     if(!playing) return;
@@ -160,9 +161,9 @@ game.addEventListener("touchstart", e=>{
         if(x >= laneStart && x <= laneEnd && Math.abs(n.y - judgeY) <= judgeRange){
             
             if(n.color==="red"){
-                score -= 3; // 赤はマイナス3点
+                score -= 100; // 赤はマイナス100点
             } else {
-                score += 100; // 青・緑はプラス
+                score += 100; // 青・緑はプラス100点
             }
             scoreEl.textContent = score;
 
