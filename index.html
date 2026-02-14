@@ -2,245 +2,108 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>館長のリズムゲーム</title>
 
 <style>
 body{
-margin:0;
-background:#0b0f1a;
-color:white;
-font-family:sans-serif;
-text-align:center;
-touch-action:manipulation;
+ margin:0;
+ background:#0b0f1a;
+ color:white;
+ text-align:center;
+ font-family:sans-serif;
 }
 
 #game{
-position:relative;
-margin:auto;
-width:95vw;
-max-width:600px;
-height:70vh;
-background:#111;
-overflow:hidden;
-border:4px solid #444;
-border-radius:12px;
-}
-
-.lane{
-position:absolute;
-width:33.33%;
-height:100%;
-border-left:2px solid #333;
-}
-
-#hitline{
-position:absolute;
-bottom:120px;
-width:100%;
-height:8px;
-background:yellow;
+ position:relative;
+ width:100vw;
+ height:70vh;
+ background:#111;
+ overflow:hidden;
 }
 
 .note{
-position:absolute;
-width:33.33%;
-height:28px;
-background:cyan;
-border-radius:6px;
+ position:absolute;
+ width:30vw;
+ height:40px;
+ background:cyan;
+ border-radius:8px;
 }
 
-.hold{
-background:orange;
-height:80px;
-}
-
-.judge{
-position:absolute;
-width:100%;
-bottom:140px;
-font-size:34px;
-font-weight:bold;
-animation:fade 0.6s forwards;
-pointer-events:none;
-}
-
-@keyframes fade{
-from{opacity:1}
-to{opacity:0;transform:scale(1.5)}
-}
-
-button{margin:10px;font-size:22px;padding:10px 30px;}
+#score{font-size:22px}
 </style>
 </head>
 
 <body>
 
 <h2>館長のリズムゲーム</h2>
+<div id="score">Score:0</div>
+<div id="timer">60</div>
 
-Score:<span id="s">0</span>
-Combo:<span id="c">0</span>
-
-<br>
-<button onclick="startGame()">スタート</button>
-
-<div id="game"
-ontouchstart="tap(event)"
-ontouchmove="holdMove(event)"
-ontouchend="holdEnd()">
-
-<div class="lane" style="left:0%"></div>
-<div class="lane" style="left:33.33%"></div>
-<div class="lane" style="left:66.66%"></div>
-<div id="hitline"></div>
-
-</div>
+<div id="game"></div>
 
 <script>
-let score=0,combo=0
+
+const URL="https://script.google.com/macros/s/AKfycbzSt5ojOfCBkLGf4wr7SQpTaYbnxLe5n0PTa0CRxYaEO64EXhajH94CunkZb_kNrbEN/exec"
+
+let score=0
+let time=60
 let notes=[]
-let running=false
-let holding=null
-let audioCtx=null
 
-function initAudio(){
- if(!audioCtx)
-  audioCtx=new(window.AudioContext||window.webkitAudioContext)()
-}
+function spawn(){
+ const lane=Math.floor(Math.random()*3)
 
-function beep(f){
- let o=audioCtx.createOscillator()
- let g=audioCtx.createGain()
- o.connect(g)
- g.connect(audioCtx.destination)
- o.frequency.value=f
- g.gain.value=0.25
- o.start()
- g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.2)
- o.stop(audioCtx.currentTime+.2)
-}
-
-function startGame(){
- initAudio()
- running=true
-}
-
-function spawnNote(){
- if(!running) return
-
- let lane=Math.floor(Math.random()*3)
- let type=Math.random()<0.25?"hold":"tap"
-
- let n=document.createElement("div")
+ const n=document.createElement("div")
  n.className="note"
- if(type==="hold") n.classList.add("hold")
-
- n.style.left=(lane*33.33)+"%"
+ n.style.left=(lane*33)+"vw"
  n.style.top="0px"
- game.appendChild(n)
 
- notes.push({el:n,lane,y:0,type})
+ game.appendChild(n)
+ notes.push({el:n,y:0})
+
+ n.onclick=()=>{
+    score+=100
+    update()
+    n.remove()
+ }
 }
-setInterval(spawnNote,700)
+
+setInterval(spawn,700)
 
 function loop(){
- if(!running) return
-
- let hitY=game.offsetHeight-140
-
- notes.forEach((n,i)=>{
-  n.y+=4
-  n.el.style.top=n.y+"px"
-
-  if(n.y>hitY+120){
-    miss(n,i)
-  }
+ notes.forEach(n=>{
+   n.y+=6
+   n.el.style.top=n.y+"px"
  })
 }
 setInterval(loop,16)
 
-// 判定広げた！
-const PERFECT=40
-const GOOD=90
-
-function tap(e){
- if(!running) return
-
- let rect=game.getBoundingClientRect()
- let x=e.touches[0].clientX-rect.left
- let lane=Math.floor(x/(rect.width/3))
- let hitY=game.offsetHeight-140
-
- for(let i=0;i<notes.length;i++){
-  let n=notes[i]
-  if(n.lane!==lane) continue
-
-  let diff=Math.abs(n.y-hitY)
-
-  if(diff<PERFECT){
-    judge("PERFECT","#00ffcc")
-    score+=300
-    combo++
-    beep(900)
-  }
-  else if(diff<GOOD){
-    judge("GOOD","#66aaff")
-    score+=100
-    combo++
-    beep(600)
-  }
-  else continue
-
-  if(n.type==="hold") holding=n
-  else{
-    n.el.remove()
-    notes.splice(i,1)
-  }
-
-  update()
-  return
- }
-
- combo=0
- update()
-}
-
-function holdMove(e){
- if(!holding) return
- score+=2
- combo++
- update()
-}
-
-function holdEnd(){
- if(holding){
-  holding.el.remove()
-  notes.splice(notes.indexOf(holding),1)
-  holding=null
- }
-}
-
-function judge(t,c){
- let j=document.createElement("div")
- j.className="judge"
- j.style.color=c
- j.textContent=t
- game.appendChild(j)
- setTimeout(()=>j.remove(),600)
-}
-
-function miss(n,i){
- combo=0
- update()
- n.el.remove()
- notes.splice(i,1)
-}
-
 function update(){
- s.textContent=score
- c.textContent=combo
+ scoreText.textContent="Score:"+score
 }
-</script>
 
+const scoreText=document.getElementById("score")
+
+setInterval(()=>{
+ time--
+ document.getElementById("timer").textContent=time
+ if(time<=0)finish()
+},1000)
+
+function finish(){
+ const name=prompt("名前入力（ランキング送信）")
+ if(name){
+  fetch(URL,{
+    method:"POST",
+    body:JSON.stringify({
+      name:name,
+      score:score,
+      game:"リズムゲーム"
+    })
+  })
+ }
+ location.reload()
+}
+
+</script>
 </body>
 </html>
