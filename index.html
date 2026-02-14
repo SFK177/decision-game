@@ -1,140 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>館長のリズムゲーム</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-body{
- margin:0;
- background:#000;
- color:white;
- font-family:sans-serif;
- text-align:center;
- overflow:hidden;
+body{margin:0;background:black;overflow:hidden}
+#line{
+position:absolute;
+bottom:120px;
+height:5px;
+width:100%;
+background:yellow;
 }
-
-#game{
- position:relative;
- width:100vw;
- height:80vh;
- background:#111;
-}
-
 .note{
- position:absolute;
- width:80px;
- height:20px;
- background:#00e0e0;
- border-radius:8px;
-}
-
-#judge{
- position:absolute;
- bottom:40px;
- width:100%;
- height:120px;
- background:rgba(255,255,255,0.1);
-}
-
-button{
- font-size:18px;
- margin-top:10px;
+position:absolute;
+width:80%;
+height:20px;
+left:10%;
+background:cyan;
 }
 </style>
 </head>
 
 <body>
 
-<h3>館長のリズムゲーム</h3>
-<div id="score">Score:0</div>
-
-<div id="game">
- <div id="judge"></div>
-</div>
-
-<button onclick="start()">スタート</button>
+<div id="line"></div>
 
 <script>
 
-const GAS_URL="https://script.google.com/macros/s/AKfycbxvmVtjmGDgewahlPtg-VnxIpee24NAEffgnpyLcMZPwEY4xbefdV24PdbWUTqVoA6K/exec";
+const URL="https://script.google.com/macros/s/AKfycbyxYEOHVtVb1axr6og0LcFPkINM2wC4t8d_aPpwnm0QQZ-Bt4UHxnIAyQMxarSdTqVM/exec"
 
-let score=0;
-let playing=false;
-
-function start(){
- score=0;
- playing=true;
- document.getElementById("score").innerText="Score:0";
-
- spawn();
- setTimeout(endGame,20000);
-}
+let score=0
+let notes=[]
 
 function spawn(){
- if(!playing) return;
-
- let n=document.createElement("div");
- n.className="note";
- n.style.left=Math.random()*80+"vw";
- n.style.top="0px";
-
- document.getElementById("game").appendChild(n);
-
- let fall=setInterval(()=>{
-   let t=parseInt(n.style.top);
-   t+=6;
-   n.style.top=t+"px";
-
-   if(t>window.innerHeight){
-     n.remove();
-     clearInterval(fall);
-   }
- },16);
-
- setTimeout(spawn,800);
+let n=document.createElement("div")
+n.className="note"
+n.style.top="0px"
+document.body.appendChild(n)
+notes.push(n)
 }
 
-document.getElementById("judge").addEventListener("touchstart",hit);
-document.getElementById("judge").addEventListener("mousedown",hit);
+setInterval(spawn,900)
 
-function hit(){
- let notes=document.querySelectorAll(".note");
+setInterval(()=>{
 
- notes.forEach(n=>{
-   let y=n.getBoundingClientRect().top;
-   let judge=document.getElementById("judge").getBoundingClientRect().top;
+notes.forEach((n,i)=>{
+let y=parseInt(n.style.top)
+y+=8
+n.style.top=y+"px"
 
-   if(Math.abs(y-judge)<120){
-     score+=10;
-     n.remove();
-     document.getElementById("score").innerText="Score:"+score;
-   }
- });
+if(y>window.innerHeight){
+n.remove()
+notes.splice(i,1)
 }
+})
 
-function endGame(){
- playing=false;
+},16)
 
- let name=prompt("名前入れて下さい");
- if(!name) name="名無し";
+document.body.addEventListener("touchstart",e=>{
 
- fetch(GAS_URL,{
-   method:"POST",
-   mode:"no-cors",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({
-     Name:name,
-     Score:score,
-     Game:"リズムゲーム",
-     Date:new Date().toLocaleString()
-   })
- });
+notes.forEach((n,i)=>{
+let y=n.getBoundingClientRect().top
 
- alert("終了 Score:"+score);
+if(Math.abs(y-(window.innerHeight-120))<120){
+score+=10
+n.remove()
+notes.splice(i,1)
 }
+})
+
+})
+
+setTimeout(()=>{
+let name=prompt("名前")
+fetch(URL,{
+method:"POST",
+body:JSON.stringify({
+Name:name,
+Score:score,
+Game:"リズム",
+Date:new Date().toLocaleString()
+})
+})
+},30000)
+
 </script>
-
 </body>
 </html>
