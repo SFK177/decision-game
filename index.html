@@ -59,7 +59,6 @@ body{
     </div>
 
     <div id="ranking"></div>
-
     <div id="judge"></div>
 </div>
 
@@ -78,7 +77,7 @@ const judgeY = window.innerHeight - 80;
 const judgeRange = 160;
 
 //--------------------------------
-// ノーツ生成（画像対応）
+// ノーツ生成（6種類対応）
 //--------------------------------
 setInterval(()=>{
     if(!playing) return;
@@ -92,18 +91,28 @@ setInterval(()=>{
     note.style.left = (lane*33.33)+"%";
     note.y = -60;
 
-    // ノーツの種類・画像
+    // ノーツの種類・画像（6種類）
     const r = Math.random();
-    if(r<0.33){
+    if(r<1/6){
         note.color="blue";
         note.style.backgroundImage = "url('oni_blue.png')";
-    } else if(r<0.66){
+    } else if(r<2/6){
         note.color="green";
         note.style.backgroundImage = "url('oni_green.png')";
+    } else if(r<3/6){
+        note.color="yellow";
+        note.style.backgroundImage = "url('oni_yellow.png')";
+    } else if(r<4/6){
+        note.color="purple";
+        note.style.backgroundImage = "url('oni_purple.png')";
+    } else if(r<5/6){
+        note.color="orange";
+        note.style.backgroundImage = "url('oni_orange.png')";
     } else {
         note.color="red";
         note.style.backgroundImage = "url('bomb.png')";
     }
+
     note.style.backgroundSize = "contain";
     note.style.backgroundRepeat = "no-repeat";
     note.style.backgroundPosition = "center";
@@ -151,7 +160,7 @@ game.addEventListener("touchstart", e=>{
             if(n.color==="red"){
                 score -= 100; // 赤はマイナス100点
             } else {
-                score += 100; // 青・緑はプラス100点
+                score += 100; // 他の5色はプラス100点
             }
             scoreEl.textContent = score;
 
@@ -176,7 +185,7 @@ const timer = setInterval(()=>{
 },1000);
 
 //--------------------------------
-// ランキング保存（ローカルのみ）
+// ランキング保存（ローカルストレージ）
 function endGame(){
     playing=false;
     clearInterval(timer);
